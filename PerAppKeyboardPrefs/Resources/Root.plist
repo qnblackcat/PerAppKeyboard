@@ -1,0 +1,124 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>title</key>
+	<string>PerAppKeyboard</string>
+	<key>items</key>
+	<array>
+		<dict>
+			<key>cell</key>
+			<string>PSGroupCell</string>
+			<key>footerText</key>
+			<string>There is also a Control Center module so you can toggle the tweak quickly.</string>
+		</dict>
+		<dict>
+			<key>cell</key>
+			<string>PSSwitchCell</string>
+			<key>key</key>
+			<string>Enabled</string>
+			<key>label</key>
+			<string>✅ Enabled</string>
+			<key>iconImageSystem</key>
+			<dict>
+				<key>name</key>
+				<string>power</string>
+			</dict>
+			<key>default</key>
+			<true/>
+			<key>defaults</key>
+			<string>com.qn.perappkeyboard</string>
+		</dict>
+		<dict>
+			<key>cell</key>
+			<string>PSGroupCell</string>
+			<key>label</key>
+			<string>📱 Apps</string>
+			<key>footerText</key>
+			<string>Choose the keyboard each app starts on. For a newly added app, reopen it once.</string>
+		</dict>
+		<dict>
+			<key>cell</key>
+			<string>PSLinkListCell</string>
+			<key>label</key>
+			<string>Default keyboard per app</string>
+			<key>detail</key>
+			<string>PAKAppListController</string>
+			<key>subcontrollerClass</key>
+			<string>PAKAppKeyboardController</string>
+			<key>pak-app-picker</key>
+			<true/>
+			<key>useSearchBar</key>
+			<true/>
+			<key>showIdentifiersAsSubtitle</key>
+			<true/>
+			<key>sections</key>
+			<array>
+				<dict>
+					<key>sectionType</key>
+					<string>Visible</string>
+				</dict>
+			</array>
+		</dict>
+		<dict>
+			<key>cell</key>
+			<string>PSGroupCell</string>
+			<key>label</key>
+			<string>🔄 Reset keyboard to the app’s default when:</string>
+			<key>footerText</key>
+			<string>Hiding the keyboard: The keyboard will not reset until you leave the app.</string>
+		</dict>
+		<dict>
+			<key>cell</key>
+			<string>PSSwitchCell</string>
+			<key>key</key>
+			<string>ResetOnKeyboardHide</string>
+			<key>label</key>
+			<string>Hiding the keyboard</string>
+			<key>iconImageSystem</key>
+			<dict>
+				<key>name</key>
+				<string>keyboard.chevron.compact.down</string>
+			</dict>
+			<key>default</key>
+			<true/>
+			<key>defaults</key>
+			<string>com.qn.perappkeyboard</string>
+		</dict>
+		<dict>
+			<key>cell</key>
+			<string>PSSwitchCell</string>
+			<key>key</key>
+			<string>ResetOnLeaveApp</string>
+			<key>label</key>
+			<string>Going Home / to another app</string>
+			<key>iconImageSystem</key>
+			<dict>
+				<key>name</key>
+				<string>house</string>
+			</dict>
+			<key>default</key>
+			<true/>
+			<key>defaults</key>
+			<string>com.qn.perappkeyboard</string>
+		</dict>
+		<dict>
+			<key>cell</key>
+			<string>PSSwitchCell</string>
+			<key>key</key>
+			<string>ResetOnLock</string>
+			<key>label</key>
+			<string>Locking with the power button</string>
+			<key>iconImageSystem</key>
+			<dict>
+				<key>name</key>
+				<string>lock</string>
+			</dict>
+			<key>default</key>
+			<false/>
+			<key>defaults</key>
+			<string>com.qn.perappkeyboard</string>
+		</dict>
+	</array>
+</dict>
+</plist>
