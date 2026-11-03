@@ -24,18 +24,15 @@ Settings → PerAppKeyboard → **Default keyboard per app** → pick an app →
 - [AltList](https://github.com/opa334/AltList) (`com.opa334.altlist`) for the app picker
 - PreferenceLoader and [CCSupport](https://github.com/opa334/CCSupport) (the Control Center toggle)
 
-Written and tested on iOS 17.1 and 16.3.1; iOS 15 _*should_ work.
+Written and tested on iOS 17.1 and 16.3.1; iOS 15 and iOS 18 _*should_ work (iOS 18 support is based on disassembling 18.6.2, not tested on a device).
 
 ## Building
 
-Requires [Theos](https://theos.dev) (the [roothide fork](https://github.com/roothide/theos) for roothide packages).
-
+Requires the [roothide fork](https://github.com/roothide/theos) of Theos:
 ```bash
 make clean package FINALPACKAGE=1 THEOS_PACKAGE_SCHEME=rootless
 make clean package FINALPACKAGE=1 THEOS_PACKAGE_SCHEME=roothide
 ```
-
-Set `PAK_DEBUG` to `1` in `Tweak.x` to log what the tweak does to Console.app (filter by `PerAppKeyboard`).
 
 ## License
 

@@ -1,5 +1,6 @@
 #import <Foundation/Foundation.h>
 #include <notify.h>
+#include <sys/stat.h>
 #include <roothide.h>
 
 // Settings live in one plist inside jbroot instead of going through cfprefsd. Sandboxed
@@ -26,8 +27,23 @@ static inline NSString *PAKPrefsPath(void) {
 	return jbroot(@"/var/mobile/Library/Preferences/com.qn.perappkeyboard.plist");
 }
 
+// Parsed again only when the file changed (inode / mtime / size; the plist is written atomically,
+// so a save always swaps the inode): the tweak asks for settings on every keyboard show.
 static inline NSDictionary *PAKPrefsLoad(void) {
-	return [NSDictionary dictionaryWithContentsOfFile:PAKPrefsPath()] ?: @{};
+	static NSDictionary *cached;
+	static struct stat cachedStat;
+	NSString *path = PAKPrefsPath();
+	struct stat st;
+	if (stat(path.fileSystemRepresentation, &st) != 0) {
+		cached = nil;
+		return [NSDictionary dictionaryWithContentsOfFile:path] ?: @{};
+	}
+	if (!cached || st.st_ino != cachedStat.st_ino || st.st_size != cachedStat.st_size ||
+		st.st_mtimespec.tv_sec != cachedStat.st_mtimespec.tv_sec || st.st_mtimespec.tv_nsec != cachedStat.st_mtimespec.tv_nsec) {
+		cached = [NSDictionary dictionaryWithContentsOfFile:path] ?: @{};
+		cachedStat = st;
+	}
+	return cached;
 }
 
 static inline void PAKPrefsSet(id value, NSString *key) {

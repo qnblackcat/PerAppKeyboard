@@ -10,6 +10,10 @@ TWEAK_NAME = PerAppKeyboard
 PerAppKeyboard_FILES = Tweak.x
 PerAppKeyboard_CFLAGS = -fobjc-arc
 
+ifeq ($(PERAPPKEYBOARD_DEBUG),1)
+PerAppKeyboard_CFLAGS += -DPAK_DEBUG=1
+endif
+
 SUBPROJECTS = PerAppKeyboardPrefs PerAppKeyboardCC
 
 include $(THEOS_MAKE_PATH)/tweak.mk

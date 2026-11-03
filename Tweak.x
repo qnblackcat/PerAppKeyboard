@@ -15,10 +15,13 @@
 
 #pragma mark - Debug logging
 
-// 1 = log the lifecycle events, every keyboard switch and why the app went inactive:
+// Set by the Makefile (`make PERAPPKEYBOARD_DEBUG=1`, or `build.sh debug`). Logs the lifecycle
+// events, every keyboard switch and why the app went inactive:
 //   log stream --predicate 'eventMessage CONTAINS "PerAppKeyboard"' --level debug
 // Everything under PAK_DEBUG is compiled out of release builds.
+#ifndef PAK_DEBUG
 #define PAK_DEBUG 0
+#endif
 
 #if PAK_DEBUG
 #import <os/log.h>
@@ -39,13 +42,21 @@ static NSString *PAKModeIdentifiers(NSArray *raw) {
 #define PAKLog(...) do {} while (0)
 #endif
 
-#pragma mark - Private UIKitCore interfaces (iOS 17.1 headers; input modes are in PAKKeyboards.h)
+#pragma mark - Private UIKitCore interfaces (iOS 17.1 / 18.6 headers; input modes are in PAKKeyboards.h)
 
-@interface UIKeyboardImpl : UIView
-+ (instancetype)activeInstance;
+// What the hooked class answers to. iOS 15 - 17 do the work in UIKeyboardImpl; on iOS 18 it only
+// forwards to _UIKeyboardStateManager, which keeps the same selectors.
+@protocol PAKKeyboardHost
 @property (nonatomic, readonly) id textInputTraits;
 - (BOOL)hardwareKeyboardAttached;
 - (void)setKeyboardInputMode:(UIKeyboardInputMode *)mode userInitiated:(BOOL)userInitiated;
+@end
+
+@interface UIKeyboardImpl : UIView <PAKKeyboardHost>
++ (instancetype)activeInstance;
+@end
+
+@interface _UIKeyboardStateManager : NSObject <PAKKeyboardHost>
 @end
 
 #pragma mark - State
@@ -76,6 +87,9 @@ static BOOL gLockSeen;
 // iOS 15 / 16 only: the departure (lock or not) hasn't been decided yet, see PAKDecideDeparture.
 static BOOL gDeparturePending;
 static UIBackgroundTaskIdentifier gDecideTask;   // UIBackgroundTaskInvalid when none (set in the %ctor)
+// Bumped each time a departure waits for the lock signals, so the delayed decision of an earlier
+// one can't settle a later one.
+static NSUInteger gDepartureGen;
 
 #pragma mark - Settings
 
@@ -107,7 +121,7 @@ static void PAKRequestReset(void) {
 #pragma mark - Switching
 
 // Don't force a keyboard onto fields where it makes no sense (passwords, numbers, URLs...).
-static BOOL PAKTraitsAllowSwitch(UIKeyboardImpl *impl) {
+static BOOL PAKTraitsAllowSwitch(id<PAKKeyboardHost> impl) {
 	id<UITextInputTraits> traits = (id<UITextInputTraits>)impl.textInputTraits;
 	if (!traits) return YES;
 	if ([traits respondsToSelector:@selector(isSecureTextEntry)] && traits.isSecureTextEntry) return NO;
@@ -135,14 +149,13 @@ static BOOL PAKTraitsAllowSwitch(UIKeyboardImpl *impl) {
 // keyboard, otherwise other apps would start on it. The master switch off gives it back.
 static void PAKDisableLastUsedTimer(UIKeyboardInputModeController *controller, BOOL disable) {
 	if (gTimerDisabled == disable) return;
-	if ([controller respondsToSelector:@selector(setDisablesUpdateLastUsedInputModeTimer:)]) {
-		[controller setDisablesUpdateLastUsedInputModeTimer:disable];
-	}
+	[controller setDisablesUpdateLastUsedInputModeTimer:disable];
 	gTimerDisabled = disable;
 }
 
-static void PAKApply(UIKeyboardImpl *impl, NSString *source) {
-	// Re-read every time: removing the app, or choosing another keyboard for it, applies at once.
+static void PAKApply(id<PAKKeyboardHost> impl, NSString *source) {
+	// Looked up every time (PAKPrefsLoad only re-parses a changed file): removing the app, or
+	// choosing another keyboard for it, applies at once.
 	// (Adding an app applies the next time it launches, see the %ctor.)
 	NSString *keyboard = PAKPrefsKeyboardForBundle(gBundleID);
 	if (!keyboard) return;
@@ -176,11 +189,7 @@ static void PAKApply(UIKeyboardImpl *impl, NSString *source) {
 	if ([current.identifier isEqualToString:target.identifier]) return;
 
 	gApplying = YES;
-	if ([impl respondsToSelector:@selector(setKeyboardInputMode:userInitiated:)]) {
-		[impl setKeyboardInputMode:target userInitiated:NO];
-	} else {
-		[controller setCurrentInputMode:target];
-	}
+	[impl setKeyboardInputMode:target userInitiated:NO];
 	gApplying = NO;
 	PAKLog(@"[%@] %@ -> %@ (now: %@)", source, current.identifier, target.identifier, controller.currentInputMode.identifier);
 }
@@ -243,32 +252,75 @@ static NSString *PAKDeactivationReasons(void) {
 
 #pragma mark - Hooks
 
-%hook UIKeyboardImpl
+// The hook bodies are shared by both groups below.
 
-// Where UIKeyboardImpl restores the remembered keyboard when a text input is attached.
-- (void)setInputModeFromPreferences {
-	%orig;
-	PAKApply(self, @"setInputModeFromPreferences");
+// Where the keyboard restores the remembered mode when a text input is attached.
+static void PAKHandleInputModeFromPreferences(id<PAKKeyboardHost> host) {
+	PAKApply(host, @"setInputModeFromPreferences");
 }
 
 // Fallback in case the system picks the mode after the call above.
-- (void)didSetDelegate {
-	%orig;
-	__weak UIKeyboardImpl *weakSelf = self;
-	dispatch_async(dispatch_get_main_queue(), ^{ PAKApply(weakSelf, @"didSetDelegate"); });
+static void PAKHandleDelegateSet(id<PAKKeyboardHost> host) {
+	__weak id<PAKKeyboardHost> weakHost = host;
+	dispatch_async(dispatch_get_main_queue(), ^{ PAKApply(weakHost, @"didSetDelegate"); });
 }
 
 // Every input mode change funnels through here; a user-initiated one (globe key / long press
 // menu) means "stop overriding until the next reset".
-- (void)_setKeyboardInputMode:(id)mode userInitiated:(BOOL)userInitiated updateIndicator:(BOOL)updateIndicator force:(BOOL)force executionContext:(id)context {
+static void PAKHandleModeSet(id mode, BOOL userInitiated) {
 	if (userInitiated && !gApplying && [mode respondsToSelector:@selector(identifier)]) {
 		gPendingReset = NO;
 		gUserMode = [[(UIKeyboardInputMode *)mode identifier] copy];
 		if (PAKAppUsesLastKeyboard()) [NSUserDefaults.standardUserDefaults setObject:gUserMode forKey:kPAKLastKeyboardKey];
 		PAKLog(@"user switched keyboard to %@ -> keep it until the next reset", gUserMode);
 	}
+}
+
+// iOS 15 - 17
+%group Legacy
+
+%hook UIKeyboardImpl
+
+- (void)setInputModeFromPreferences {
+	%orig;
+	PAKHandleInputModeFromPreferences(self);
+}
+
+- (void)didSetDelegate {
+	%orig;
+	PAKHandleDelegateSet(self);
+}
+
+- (void)_setKeyboardInputMode:(id)mode userInitiated:(BOOL)userInitiated updateIndicator:(BOOL)updateIndicator force:(BOOL)force executionContext:(id)context {
+	PAKHandleModeSet(mode, userInitiated);
 	%orig;
 }
+
+%end
+
+%end
+
+// iOS 18: UIKeyboardImpl only forwards to _UIKeyboardStateManager, so hook that one.
+%group iOS18
+
+%hook _UIKeyboardStateManager
+
+- (void)setInputModeFromPreferences {
+	%orig;
+	PAKHandleInputModeFromPreferences(self);
+}
+
+- (void)didSetDelegate {
+	%orig;
+	PAKHandleDelegateSet(self);
+}
+
+- (void)_setKeyboardInputMode:(id)mode userInitiated:(BOOL)userInitiated updateIndicator:(BOOL)updateIndicator force:(BOOL)force executionContext:(id)context {
+	PAKHandleModeSet(mode, userInitiated);
+	%orig;
+}
+
+%end
 
 %end
 
@@ -319,8 +371,9 @@ static NSString *PAKDeactivationReasons(void) {
 			gDecideTask = [UIApplication.sharedApplication beginBackgroundTaskWithName:@"PerAppKeyboard" expirationHandler:^{
 				PAKDecideDeparture(@"task expired");
 			}];
+			NSUInteger generation = ++gDepartureGen;
 			dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(1.0 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
-				PAKDecideDeparture(@"delay");
+				if (generation == gDepartureGen) PAKDecideDeparture(@"delay");
 			});
 		}];
 		[center addObserverForName:UIApplicationWillEnterForegroundNotification object:nil queue:main usingBlock:^(NSNotification *n) {
@@ -342,6 +395,10 @@ static NSString *PAKDeactivationReasons(void) {
 			dispatch_async(dispatch_get_main_queue(), ^{ PAKApply(nil, @"becomeActive+1"); });
 		}];
 
-		%init;
+		if (@available(iOS 18, *)) {
+			%init(iOS18);
+		} else {
+			%init(Legacy);
+		}
 	}
 }
