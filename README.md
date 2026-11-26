@@ -2,42 +2,31 @@
 
 # PerAppKeyboard
 
-Choose the keyboard each app starts on, from the keyboards you have enabled in iOS. For jailbroken iOS 15+.
+Choose the **keyboard each app starts on**, from the keyboards you have added in iOS. For jailbroken iOS 15+.
 
-## Features
+- Pick the apps in Settings → PerAppKeyboard → Default keyboard per app. Apps you don't set up are left alone.
+- Per app: a fixed keyboard, **Last used in this app**, or **Don't change** (iOS decides).
+- Third-party keyboards work too. The tweak only launches them: Full Access and their own settings are up to you.
+- You can still switch with the globe key while typing. The keyboard goes back to the app's one when you hide it, go Home / to another app, or lock with the power button (each can be turned off).
+- Password, number, URL and e-mail fields and hardware keyboards are left alone.
+- Master switch, also available as a Control Center toggle.
 
-- Per app: a fixed keyboard (any keyboard you have enabled, third-party ones too), **Last used in this app**, or **Don't change** (the default, iOS decides)
-- The keyboard goes back to the app's keyboard every time it appears. You can still switch with the globe key while typing
-- Choose what resets it: hiding the keyboard, going Home or to another app, locking with the power button
-- Master switch, also available as a Control Center toggle
-- Leaves password, number, URL and e-mail fields and hardware keyboards alone
+## Build
 
-Any keyboard you have added in Keyboard Settings works, third-party ones included. The tweak only launches them: Full Access and their own settings are up to you.
+<details>
+<summary>Build instructions</summary>
 
-## Usage
+Build with Theos (roothide fork).
 
-Settings → PerAppKeyboard → **Default keyboard per app** → pick an app → pick its keyboard. Nothing changes in apps you don't set up. A newly set up app takes effect the next time you open it.
-
-## Troubleshooting
-
-If a keyboard doesn't switch the way you expect: Settings → PerAppKeyboard → **Troubleshooting**, turn on **Debug log**, reproduce the problem in the app, then **Share log** or **Copy log** and send it with the report. **Clear log** deletes it. Only apps you set up are recorded; turn Debug off afterwards.
-
-## Requirements
-
-- iOS 15.0 or later, rootless or roothide
-- [AltList](https://github.com/opa334/AltList) (`com.opa334.altlist`) for the app picker
-- PreferenceLoader and [CCSupport](https://github.com/opa334/CCSupport) (the Control Center toggle)
-
-Written and tested on iOS 17.1 and 16.3.1; iOS 15 and iOS 18 _*should_ work (iOS 18 support is based on disassembling 18.6.2, not tested on a device).
-
-## Building
-
-Requires the [roothide fork](https://github.com/roothide/theos) of Theos:
-```bash
+```sh
 make clean package FINALPACKAGE=1 THEOS_PACKAGE_SCHEME=rootless
 make clean package FINALPACKAGE=1 THEOS_PACKAGE_SCHEME=roothide
 ```
 
+</details>
+
 ## License
 
-[GPLv3](LICENSE) © 2026 Qn (Đạt Nguyễn)
+PerAppKeyboard is licensed under the GNU General Public License, version 3 only. See [LICENSE](LICENSE).
+
+© 2026 Qn (Đạt Nguyễn)
