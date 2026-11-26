@@ -42,13 +42,15 @@ static inline NSArray<UIKeyboardInputMode *> *PAKModes(UIKeyboardInputModeContro
 	return result;
 }
 
-// iOS keyboards only: no emoji, no third-party keyboard extensions.
+// Any keyboard but emoji, third-party keyboard extensions included. They are only launched: how
+// they are configured (Full Access...) is up to the user.
 static inline BOOL PAKModeIsSelectable(UIKeyboardInputMode *mode) {
-	return mode && !mode.isEmojiInputMode && !mode.isExtensionInputMode;
+	return mode && !mode.isEmojiInputMode;
 }
 
 static inline BOOL PAKModeIsLanguage(UIKeyboardInputMode *mode, NSString *lang) {
-	if (!PAKModeIsSelectable(mode)) return NO;
+	// Third-party keyboards only match by their exact identifier: it has no language to compare.
+	if (!PAKModeIsSelectable(mode) || mode.isExtensionInputMode) return NO;
 	// isHandwritingInputMode doesn't exist before iOS 17: calling it unchecked crashes iOS 15 / 16.
 	if ([mode respondsToSelector:@selector(isHandwritingInputMode)] && mode.isHandwritingInputMode) return NO;
 	NSString *ident = mode.identifier ?: mode.primaryLanguage;
@@ -93,6 +95,8 @@ static inline NSString *PAKKeyboardTitle(NSString *wanted) {
 	if ([wanted isEqualToString:PAK_KEYBOARD_LAST]) return @"Last used in this app";
 	UIKeyboardInputMode *mode = PAKResolveMode([UIKeyboardInputModeController sharedInputModeController], wanted);
 	if (mode) return PAKModeTitle(mode);
+	// A third-party keyboard's identifier is a bundle id ("com.vendor.app.Keyboard"), not a language.
+	if ([wanted containsString:@"."]) return [wanted stringByAppendingString:@" (not installed)"];
 	NSString *language = [NSLocale.currentLocale localizedStringForLanguageCode:PAKLanguageHead(wanted)] ?: wanted;
 	return [language stringByAppendingString:@" (not installed)"];
 }

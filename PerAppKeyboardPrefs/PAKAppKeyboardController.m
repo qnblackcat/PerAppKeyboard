@@ -33,7 +33,7 @@ static NSString *const kRowKeyboard = @"pak-keyboard";
 		NSMutableArray *specs = [NSMutableArray array];
 
 		PSSpecifier *group = [PSSpecifier groupSpecifierWithName:nil];
-		[group setProperty:@"The keyboard this app starts on. Third-party keyboards aren\u2019t listed.\n\n\u2022 \u201cDon\u2019t change\u201d leaves it to iOS.\n\u2022 \u201cLast used\u201d remembers your last pick in this app." forKey:@"footerText"];
+		[group setProperty:@"The keyboard this app starts on. Third-party keyboards aren\u2019t listed.\n\n\u2022 \u201cDon\u2019t change\u201d leaves it to iOS.\n\u2022 \u201cLast used\u201d remembers your last pick in this app" forKey:@"footerText"];
 		[specs addObject:group];
 
 		void (^addRow)(NSString *, NSString *) = ^(NSString *title, NSString *keyboard) {

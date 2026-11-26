@@ -2,6 +2,10 @@
 #import <Preferences/PSSpecifier.h>
 #import "PAKAppListController.h"
 #import "../PAKPrefs.h"
+#import "../PAKLog.h"
+#include <sys/utsname.h>
+
+#define PAKLogCopyMaxBytes (200 * 1024)
 
 @implementation PAKRootListController
 
@@ -21,13 +25,6 @@
 				}
 			}
 		}
-		PSSpecifier *sourceGroup = [PSSpecifier groupSpecifierWithName:@"\U0001F4BB Source Code"];
-		[sourceGroup setProperty:@"\u00a9 2026 Qn (\u0110\u1ea1t Nguy\u1ec5n)" forKey:@"footerText"];
-		[specs addObject:sourceGroup];
-		PSSpecifier *source = [PSSpecifier preferenceSpecifierNamed:@"GitHub" target:self set:nil get:nil detail:nil cell:PSButtonCell edit:nil];
-		source.buttonAction = @selector(openSourceCode:);
-		[specs addObject:source];
-
 		_specifiers = specs;
 	}
 	return _specifiers;
@@ -53,8 +50,72 @@ static BOOL isOurs(PSSpecifier *specifier) {
 	PAKPrefsSet(value, specifier.properties[@"key"]);
 }
 
-- (void)openSourceCode:(PSSpecifier *)specifier {
-	[[UIApplication sharedApplication] openURL:[NSURL URLWithString:@"https://github.com/qnblackcat/PerAppKeyboard"] options:@{} completionHandler:nil];
+#pragma mark - About
+
+- (void)openURLString:(NSString *)string {
+	[[UIApplication sharedApplication] openURL:[NSURL URLWithString:string] options:@{} completionHandler:nil];
+}
+
+- (void)openSourceCode {
+	[self openURLString:@"https://github.com/qnblackcat/PerAppKeyboard"];
+}
+
+- (void)openTwitter {
+	[self openURLString:@"https://x.com/t70438299"];
+}
+
+- (NSString *)tweakVersion:(PSSpecifier *)specifier {
+	return @PAK_VERSION;
+}
+
+#pragma mark - Troubleshooting
+
+- (void)showAlertWithTitle:(NSString *)title message:(NSString *)message {
+	UIAlertController *alert = [UIAlertController alertControllerWithTitle:title message:message preferredStyle:UIAlertControllerStyleAlert];
+	[alert addAction:[UIAlertAction actionWithTitle:@"OK" style:UIAlertActionStyleDefault handler:nil]];
+	[self presentViewController:alert animated:YES completion:nil];
+}
+
+// The log with a header saying what it came from, or nil (after telling the user) if there is nothing to send
+- (NSString *)debugLogForSending {
+	NSString *log = PAKLogFileRead(PAKLogCopyMaxBytes);
+	if (!log.length) {
+		[self showAlertWithTitle:@"The log is empty" message:@"Turn on Debug, use an app you set up, then try again. Nothing is recorded for apps that aren't set up."];
+		return nil;
+	}
+	struct utsname system;
+	uname(&system);
+	NSString *header = [NSString stringWithFormat:@"PerAppKeyboard %@ debug log, iOS %@, %s\n", @PAK_VERSION, [UIDevice currentDevice].systemVersion, system.machine];
+	return [header stringByAppendingString:log];
+}
+
+- (void)copyDebugLog {
+	NSString *log = [self debugLogForSending];
+	if (!log) return;
+	[UIPasteboard generalPasteboard].string = log;
+	[self showAlertWithTitle:@"Copied" message:[NSString stringWithFormat:@"%lu KB of log copied to the clipboard.", (unsigned long)(log.length / 1024 + 1)]];
+}
+
+- (void)shareDebugLog {
+	NSString *log = [self debugLogForSending];
+	if (!log) return;
+	NSURL *url = [NSURL fileURLWithPath:[NSTemporaryDirectory() stringByAppendingPathComponent:@"PerAppKeyboard-debug-log.txt"]];
+	if (![log writeToURL:url atomically:YES encoding:NSUTF8StringEncoding error:NULL]) {
+		[self showAlertWithTitle:@"Couldn't write the log file" message:nil];
+		return;
+	}
+	UIActivityViewController *sheet = [[UIActivityViewController alloc] initWithActivityItems:@[url] applicationActivities:nil];
+	sheet.popoverPresentationController.sourceView = self.view;
+	[self presentViewController:sheet animated:YES completion:nil];
+}
+
+- (void)clearDebugLog {
+	UIAlertController *alert = [UIAlertController alertControllerWithTitle:@"Delete the debug log?" message:nil preferredStyle:UIAlertControllerStyleAlert];
+	[alert addAction:[UIAlertAction actionWithTitle:@"Cancel" style:UIAlertActionStyleCancel handler:nil]];
+	[alert addAction:[UIAlertAction actionWithTitle:@"Delete" style:UIAlertActionStyleDestructive handler:^(UIAlertAction *action) {
+		PAKLogFileClear();
+	}]];
+	[self presentViewController:alert animated:YES completion:nil];
 }
 
 @end

@@ -12,6 +12,7 @@
 #define PAK_RESET_ON_KEYBOARD_HIDE  @"ResetOnKeyboardHide"   // dismissing and showing the keyboard
 #define PAK_RESET_ON_LEAVE_APP      @"ResetOnLeaveApp"       // Home / another app
 #define PAK_RESET_ON_LOCK           @"ResetOnLock"           // power button
+#define PAK_DEBUG_LOG               @"Debug"                 // debug log (see PAKLog.h)
 
 // { bundle id : keyboard }, the keyboard each app starts on: an input mode identifier
 // ("vi_VN-Telex@sw=QWERTY;hw=Automatic"), or PAK_KEYBOARD_LAST. Apps that aren't in the map are

@@ -18,6 +18,10 @@ Any keyboard you have added in Keyboard Settings works, third-party ones include
 
 Settings → PerAppKeyboard → **Default keyboard per app** → pick an app → pick its keyboard. Nothing changes in apps you don't set up. A newly set up app takes effect the next time you open it.
 
+## Troubleshooting
+
+If a keyboard doesn't switch the way you expect: Settings → PerAppKeyboard → **Troubleshooting**, turn on **Debug log**, reproduce the problem in the app, then **Share log** or **Copy log** and send it with the report. **Clear log** deletes it. Only apps you set up are recorded; turn Debug off afterwards.
+
 ## Requirements
 
 - iOS 15.0 or later, rootless or roothide
