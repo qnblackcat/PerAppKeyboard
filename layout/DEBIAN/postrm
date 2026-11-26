@@ -1,0 +1,18 @@
+#!/bin/sh
+
+# Delete the debug log (Settings → Troubleshooting) when the package is removed, not on upgrade.
+# The tweak writes it to the first of the directories below its process could write to (see
+# PAKLogDirectories in PAKLog.m): rootless keeps them under /var/jb, roothide inside jbroot (the
+# shell already runs there), /rootfs is the real filesystem seen from roothide.
+case "$1" in
+	remove|purge)
+		for root in "" /var/jb "$JBROOT" /rootfs; do
+			rm -rf "$root/var/mobile/Library/Caches/PerAppKeyboard" \
+				"$root/var/tmp/PerAppKeyboard" \
+				"$root/var/mobile/tmp/PerAppKeyboard" \
+				"$root/private/var/mobile/tmp/PerAppKeyboard" 2>/dev/null
+		done
+		;;
+esac
+
+exit 0
