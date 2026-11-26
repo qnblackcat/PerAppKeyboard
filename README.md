@@ -6,13 +6,13 @@ Choose the keyboard each app starts on, from the keyboards you have enabled in i
 
 ## Features
 
-- Per app: a fixed keyboard (any iOS keyboard you have enabled), **Last used in this app**, or **Don't change** (the default, iOS decides)
+- Per app: a fixed keyboard (any keyboard you have enabled, third-party ones too), **Last used in this app**, or **Don't change** (the default, iOS decides)
 - The keyboard goes back to the app's keyboard every time it appears. You can still switch with the globe key while typing
 - Choose what resets it: hiding the keyboard, going Home or to another app, locking with the power button
 - Master switch, also available as a Control Center toggle
 - Leaves password, number, URL and e-mail fields and hardware keyboards alone
 
-Only stock iOS keyboards (from Keyboard Settings) are supported, not third-party ones.
+Any keyboard you have added in Keyboard Settings works, third-party ones included. The tweak only launches them: Full Access and their own settings are up to you.
 
 ## Usage
 
