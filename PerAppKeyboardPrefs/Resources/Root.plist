@@ -124,6 +124,8 @@
 			<string>PSGroupCell</string>
 			<key>label</key>
 			<string>🛠️ Troubleshooting</string>
+			<key>id</key>
+			<string>troubleGroup</string>
 			<key>footerText</key>
 			<string>Turn on Debug, reproduce the problem, then share or copy the log</string>
 		</dict>
@@ -143,10 +145,14 @@
 			<false/>
 			<key>defaults</key>
 			<string>com.qn.perappkeyboard</string>
+			<key>id</key>
+			<string>debugSwitch</string>
 		</dict>
 		<dict>
 			<key>cell</key>
 			<string>PSButtonCell</string>
+			<key>id</key>
+			<string>shareLog</string>
 			<key>action</key>
 			<string>shareDebugLog</string>
 			<key>label</key>
@@ -155,6 +161,8 @@
 		<dict>
 			<key>cell</key>
 			<string>PSButtonCell</string>
+			<key>id</key>
+			<string>copyLog</string>
 			<key>action</key>
 			<string>copyDebugLog</string>
 			<key>label</key>
@@ -163,6 +171,8 @@
 		<dict>
 			<key>cell</key>
 			<string>PSButtonCell</string>
+			<key>id</key>
+			<string>clearLog</string>
 			<key>action</key>
 			<string>clearDebugLog</string>
 			<key>label</key>
@@ -191,7 +201,7 @@ Licensed under the GNU GPLv3</string>
 			<key>action</key>
 			<string>openSourceCode</string>
 			<key>label</key>
-			<string>Source Code</string>
+			<string>Source Code (GitHub)</string>
 		</dict>
 		<dict>
 			<key>cell</key>
@@ -199,7 +209,7 @@ Licensed under the GNU GPLv3</string>
 			<key>action</key>
 			<string>openTwitter</string>
 			<key>label</key>
-			<string>Twitter</string>
+			<string>Twitter (Đạt)</string>
 		</dict>
 	</array>
 </dict>

@@ -7,7 +7,10 @@
 
 #define PAKLogCopyMaxBytes (200 * 1024)
 
-@implementation PAKRootListController
+@implementation PAKRootListController {
+	NSString *_logFooter;               // the troubleshooting note, shown only while Debug is on
+	NSArray<PSSpecifier *> *_logRows;   // share/copy/clear buttons, shown only while Debug is on
+}
 
 - (NSArray *)specifiers {
 	if (!_specifiers) {
@@ -23,6 +26,20 @@
 				if ([spec.properties[@"label"] hasSuffix:@"Apps"]) {
 					[spec setProperty:@"Choosing apps needs AltList (com.opa334.altlist). Install it, then reopen this page." forKey:@"footerText"];
 				}
+			}
+		}
+		// the log buttons only make sense while Debug is on
+		NSMutableArray *logRows = [NSMutableArray array];
+		for (PSSpecifier *spec in specs) {
+			if ([@[@"shareLog", @"copyLog", @"clearLog"] containsObject:spec.identifier]) [logRows addObject:spec];
+		}
+		_logRows = logRows;
+		BOOL debugOn = [PAKPrefsLoad()[@"Debug"] boolValue];
+		if (!debugOn) [specs removeObjectsInArray:_logRows];
+		for (PSSpecifier *spec in specs) {
+			if ([spec.identifier isEqualToString:@"troubleGroup"]) {
+				_logFooter = [spec propertyForKey:@"footerText"];
+				if (!debugOn) [spec setProperty:@"" forKey:@"footerText"];
 			}
 		}
 		_specifiers = specs;
@@ -48,6 +65,21 @@ static BOOL isOurs(PSSpecifier *specifier) {
 		return;
 	}
 	PAKPrefsSet(value, specifier.properties[@"key"]);
+	// show or hide the log buttons when the Debug switch is flipped
+	if (![specifier.identifier isEqualToString:@"debugSwitch"] || !_logRows.count) return;
+	PSSpecifier *debugRow = [self specifierForID:@"debugSwitch"];
+	PSSpecifier *group = [self specifierForID:@"troubleGroup"];
+	[group setProperty:([value boolValue] ? _logFooter : @"") forKey:@"footerText"];
+	if ([value boolValue]) {
+		if (![self specifierForID:@"shareLog"]) [self insertContiguousSpecifiers:_logRows afterSpecifier:debugRow animated:YES];
+	} else {
+		[self removeContiguousSpecifiers:_logRows animated:YES];
+	}
+	// the footer is only re-read when its section is reloaded
+	NSInteger section = [self indexPathForSpecifier:group].section;
+	if (section != NSNotFound) {
+		[self.table reloadSections:[NSIndexSet indexSetWithIndex:section] withRowAnimation:UITableViewRowAnimationNone];
+	}
 }
 
 #pragma mark - About
